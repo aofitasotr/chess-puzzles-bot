@@ -13,5 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем весь исходный код в контейнер
 COPY . .
 
+#слушаем порт 5000 для Flask
+EXPOSE 5000
+
 # Команда для запуска приложения
 CMD ["python", "run.py"]
