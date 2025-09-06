@@ -1,4 +1,5 @@
 services:
+  # Основное приложение с автоматическими миграциями
   flask-app:
     build:
       context: .
@@ -11,13 +12,33 @@ services:
       FLASK_HOST: ${FLASK_HOST}
       FLASK_PORT: ${FLASK_PORT}
       DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      PYTHONUNBUFFERED: 1
     volumes:
       - .:/app
+      - csvdata:/app/app/db/data
+      - migrationsdata:/app/app/db/migrations
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - default
+    command: >
+      sh -c "
+        python -m app.db.migrate_db &&
+        python -m app.db.init_data &&
+        python run.py
+      "
   
   rabbitmq:
     image: rabbitmq:4.1.4-management
@@ -30,6 +51,12 @@ services:
       - "${RABBITMQ_MANAGEMENT_PORT}:15672"  # порт веб-админки
     networks:
       - default
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
   postgres:
     image: postgres:latest
     container_name: postgres
@@ -39,16 +66,21 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}            
     ports:
       - "${POSTGRES_PORT}:5432"
-    # Используем tmpfs для пересоздания БД каждый раз
-    tmpfs:
-      - /var/lib/postgresql/data
+    # Сохраняем данные БД в volume
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
 
 networks:
   default:
     driver: bridge
+
+volumes:
+  pgdata:
+  csvdata:
+  migrationsdata:

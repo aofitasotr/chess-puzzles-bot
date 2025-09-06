@@ -1,0 +1,16 @@
+# Кэш Python
+__pycache__/
+*.pyc
+
+# IDE файлы
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

@@ -1,20 +1,21 @@
-#Используем образ Python 3.13.3
-FROM python:3.13.3-slim
+FROM amancevice/pandas:2.3.2
 
-#Устанавливаем рабочую директорию в контейнере
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-#Копируем файл зависимостей
+# Копируем requirements.txt и устанавливаем зависимости
 COPY requirements.txt .
-
-#Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем весь исходный код в контейнер
-COPY . .
+# Создаем папку для логов
+RUN mkdir -p /app/logs
 
-#слушаем порт 5000 для Flask
+# Копируем код приложения
+COPY app/ app/
+COPY run.py .
+
+# Слушаем порт 5000
 EXPOSE 5000
 
-# Команда для запуска приложения
+# Команда для запуска
 CMD ["python", "run.py"]

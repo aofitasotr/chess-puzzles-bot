@@ -1,6 +1,7 @@
 from flask import Flask
+from flask_migrate import Migrate
 from app.config import config
-from app.database import db, init_db
+from app.db.models import db
 
 def create_app(config_name='development'):
     """Фабрика приложения - создает и настраивает Flask приложение"""
@@ -11,16 +12,14 @@ def create_app(config_name='development'):
     
     # Инициализируем расширения
     db.init_app(app)
+    migrate = Migrate(app, db, directory='app/db/migrations')
     
     # Регистрируем Blueprint
     from app.routes import main_bp
     app.register_blueprint(main_bp)
     
     # Импортируем модели для регистрации
-    from app import models
-    
-    # Инициализируем базу данных
-    init_db(app)
+    from app.db import models
     
     return app
 
